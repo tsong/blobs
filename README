@@ -1,0 +1,29 @@
+===============================================================================
+                                    BLOBS
+===============================================================================
+
+===================
+      Author
+===================
+
+Tim Song
+timsong@uvic.ca
+
+===================
+     Overview
+===================
+
+This program demos implicit models.
+
+===================
+      Usage
+===================
+
+===================
+     Build
+===================
+
+This program was built using Qt 4.7.0. After installing the framework, run
+> qmake
+> make
+to build the program.
