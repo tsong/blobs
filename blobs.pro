@@ -15,6 +15,8 @@ SOURCES += main.cpp\
     displaywidget.cpp \
     utils/glutils.cpp \
     utils/pointutils.cpp \
+    polygonizer.cpp \
+    implicitsphere.cpp
 
 HEADERS  += mainwindow.h \
     displaywidget.h \
@@ -22,6 +24,9 @@ HEADERS  += mainwindow.h \
     utils/vector.h \
     utils/glutils.h \
     utils/pointutils.h \
+    polygonizer.h \
+    implicitsurface.h \
+    implicitsphere.h
 
 FORMS    +=
 

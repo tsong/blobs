@@ -6,8 +6,7 @@
 #include <QUndoStack>
 
 #include "utils/vector.h"
-
-#define POINT_RADIUS 6
+#include "polygonizer.h"
 
 using namespace std;
 
@@ -32,7 +31,9 @@ protected:
     //All interactions are pushed to this stack
     QUndoStack *m_undoStack;
 
-    //tracks selected vertex for movement
+    Polygonizer m_polygonizer;
+
+    //tracks selected surface for movement
     bool m_selected;
     uint m_selectedIndex;
     int m_moveCommandId;
