@@ -29,19 +29,22 @@ public:
     void addSurface(ImplicitSurface *surface);
     void removeSurface(uint position);
     ImplicitSurface *getSurface(uint position);
+    const ImplicitSurface *readSurface(uint position) const;
 
-    const vector<Vector2f> &polygonize();
+    void polygonize();
+    const float *getVertices(uint &size);
+    const float *getNormals(uint &size);
+    const float *getColors(uint &size);
 
 protected:
     uint m_rows, m_columns;
-
-    Vector2f m_origin;
-    float m_width, m_height;
+    Vector2f m_origin, m_dimensions;
 
     vector<ImplicitSurface*> m_surfaces;
 
-    bool *m_grid;
-    vector<Vector2f> m_vertices;
+    float *m_grid;
+    bool m_isPolygonized;
+
 };
 
 #endif // POLYGONIZER_H

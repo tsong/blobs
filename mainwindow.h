@@ -1,8 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#define MAIN_WINDOW_DEFAULT_WIDTH 800
-#define MAIN_WINDOW_DEFAULT_HEIGHT 600
+#define MAIN_WINDOW_DEFAULT_WIDTH 500
+#define MAIN_WINDOW_DEFAULT_HEIGHT 500
 
 #include <QMainWindow>
 #include <QUndoStack>

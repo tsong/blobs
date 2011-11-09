@@ -52,8 +52,8 @@ void DisplayWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
-    const vector<Vector2f> &vertices = m_polygonizer.polygonize();
-    float data[vertices.size()*2];
+    m_polygonizer.polygonize();
+    /*float data[vertices.size()*2];
     for (uint i = 0; i < vertices.size(); i++) {
         Vector2f v = vertices[i];
         data[2*i] = v[0];
@@ -69,7 +69,7 @@ void DisplayWidget::paintGL() {
     glDrawArrays(GL_POINTS, 0, vertices.size());
 
     // deactivate vertex arrays after drawing
-    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);*/
 }
 
 void DisplayWidget::mousePressEvent(QMouseEvent *event) {
