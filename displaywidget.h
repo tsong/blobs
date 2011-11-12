@@ -3,7 +3,7 @@
 
 #include <QGLWidget>
 #include <QMouseEvent>
-#include <QUndoStack>
+#include <QTimer>
 
 #include "utils/vector.h"
 #include "polygonizer.h"
@@ -13,7 +13,7 @@ using namespace std;
 class DisplayWidget : public QGLWidget {
     Q_OBJECT
 public:
-    DisplayWidget(QWidget *parent = 0, QUndoStack *undoStack = 0);
+    DisplayWidget(QWidget *parent = 0);
     ~DisplayWidget();
 
 protected:
@@ -29,7 +29,6 @@ protected:
 
 protected:
     //All interactions are pushed to this stack
-    QUndoStack *m_undoStack;
 
     Polygonizer m_polygonizer;
 

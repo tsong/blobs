@@ -5,10 +5,9 @@
 #include <QSplitter>
 
 MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent), m_displayWidget(0), m_undoStack(0)
+    QMainWindow(parent), m_displayWidget(0)
 {
-    m_undoStack = new QUndoStack(this);
-    m_displayWidget = new DisplayWidget(this, m_undoStack);
+    m_displayWidget = new DisplayWidget(this);
     createMenus();
 
     this->setCentralWidget(m_displayWidget);

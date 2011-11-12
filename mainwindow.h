@@ -22,8 +22,6 @@ protected:
 protected:
     //surface which users interact with and draw the points
     DisplayWidget *m_displayWidget;
-
-    QUndoStack *m_undoStack;
 };
 
 #endif // MAINWINDOW_H

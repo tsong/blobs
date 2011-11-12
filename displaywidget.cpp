@@ -3,15 +3,9 @@
 #include "utils/glutils.h"
 #include "implicitsphere.h"
 
-DisplayWidget::DisplayWidget(QWidget *parent, QUndoStack *undoStack) :
-    QGLWidget(parent), m_undoStack(undoStack), m_selected(false)
+DisplayWidget::DisplayWidget(QWidget *parent) :
+    QGLWidget(parent), m_selected(false)
 {
-    if (!undoStack) {
-        undoStack = new QUndoStack(this);
-    }
-
-    //each action will redraw the scene
-    connect(m_undoStack, SIGNAL(indexChanged(int)), this, SLOT(repaint()));
     m_polygonizer.widget = this;
 }
 
@@ -56,13 +50,17 @@ void DisplayWidget::paintGL() {
     m_polygonizer.polygonize();
 
     uint numVertices;
-    const float *data = m_polygonizer.getVertices(numVertices);
-    if (data == 0) return;
+    const float *vertices = m_polygonizer.getVertices(numVertices);
+    const float *colors = m_polygonizer.getColors(numVertices);
+    if (vertices == 0 || colors == 0) return;
 
-    glColor3f(0,0,0);
+    //glColor3f(0,0,0);
     glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(2, GL_FLOAT, 0, data);
+    glEnableClientState(GL_COLOR_ARRAY);
+        glVertexPointer(2, GL_FLOAT, 0, vertices);
+        glColorPointer(3, GL_FLOAT, 0, colors);
         glDrawArrays(GL_TRIANGLES, 0, numVertices);
+    glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
 
     /*glColor3f(0,0,0);
@@ -77,7 +75,8 @@ void DisplayWidget::mousePressEvent(QMouseEvent *event) {
     float x = (float)event->x();
     float y = (float)event->y();
 
-    ImplicitSphere *sphere = new ImplicitSphere(Vector2f(x,y), 40);
+    Vector3f color = randColor3f(rand());
+    ImplicitSphere *sphere = new ImplicitSphere(Vector2f(x,y), 40, color);
     m_polygonizer.addSurface(sphere);
     repaint();
 }

@@ -13,8 +13,8 @@ inline int clampUp(float v) {
 }
 
 
-ImplicitSphere::ImplicitSphere(Vector2f position, float radius)
-    : m_position(position), m_radius(2*radius)
+ImplicitSphere::ImplicitSphere(Vector2f position, float radius, Vector3f color)
+    : m_position(position), m_radius(2*radius), m_color(color)
 {
 }
 
@@ -83,9 +83,16 @@ void ImplicitSphere::blendGrid(Vertex *grid, int rows, int columns,
     //update the grid
     for (int i = boundRow; i < boundRow + boundHeight; i++) {
         for (int j = boundCol; j < boundCol + boundWidth; j++) {
+            float f = fieldValue(origin[0] + dx*j, origin[1] + dy*i);
+
+            //update grid vertex
             Vertex &v = grid[i*columns + j];
-            v.fieldValue += fieldValue(origin[0] + dx*j, origin[1] + dy*i);
+            v.color = m_color*f + v.color;
+            v.fieldValue += f;
             v.isInterior = v.fieldValue >= ISOVALUE;
+
+            if (f > 0.1)
+                int x = 0;
         }
     }
 
@@ -93,6 +100,13 @@ void ImplicitSphere::blendGrid(Vertex *grid, int rows, int columns,
 
     //glColor3f(0,0,0);
     //glDrawCircle(m_position[0], m_position[1], 5);
+}
 
+void ImplicitSphere::setColor(Vector3f &color) {
+    m_color = color;
+}
+
+const Vector3f &ImplicitSphere::getColor() {
+    return m_color;
 }
 
