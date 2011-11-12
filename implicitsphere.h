@@ -11,9 +11,14 @@ public:
                    Vector2f velocity = Vector2f(0,0),
                    float weight = 1);
     ~ImplicitSphere();
+
+    //returns the field value at position (x,y)
     float fieldValue(float x, float y);
+
+    //blends this sphere with a grid of vertices
     void blendGrid(Vertex *grid, int rows, int columns, Vector2f origin, Vector2f dimensions);
 
+    /* attribute getter and setter methods */
     void setColor(Vector3f &color) { m_color = color; }
     const Vector3f &getColor() const { return m_color; }
 

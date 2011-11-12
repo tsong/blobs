@@ -9,18 +9,17 @@
 #include "displaywidget.h"
 #include "controlwidget.h"
 
-
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
     MainWindow(QWidget *parent = 0);
-    ~MainWindow();
 
 protected:
     //surface which users interact with and draw the points
     DisplayWidget *m_displayWidget;
 
+    //widget to to change the properties of selected surface
     ControlWidget *m_controlWidget;
 };
 

@@ -18,6 +18,7 @@ public:
     ~ControlWidget();
 
 signals:
+    //emitted when ui controls are changed
     void animate(bool);
     void radiusChanged(float);
     void weightChanged(float);
@@ -25,6 +26,7 @@ signals:
     void colorChanged(Vector3f);
 
 public slots:
+    //change the values of the ui elements
     void changeSphere(const ImplicitSphere *sphere);
     void changeRadius(float radius);
     void changeWeight(float weight);
@@ -36,16 +38,21 @@ private:
     void enableControls();
     void disconnectSignals();
     void connectSignals();
-    Ui::ControlWidget *ui;
-    bool m_buttonDown;
-
 
 private slots:
+    //update the text of each label and emit changed signal
     void updateRadius();
     void updateWeight();
     void updateColor();
     void updateVelocity();
-    void buttonClicked();
+
+    //animate button clicked
+    void animateClicked();
+
+private:
+    Ui::ControlWidget *ui;
+    bool m_buttonDown;
+
 };
 
 #endif // CONTROLWIDGET_H

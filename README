@@ -13,11 +13,20 @@ timsong@uvic.ca
      Overview
 ===================
 
-This program demos implicit models.
+This program demos implicit models, which blend together forming blob-like shapes.
 
 ===================
       Usage
 ===================
+
+-Left Click on an empty area on the drawing surface to create a randomly generated blob
+-Right Click on an existing blob to delete it from the scene
+
+-Press the "Animate" button in the control panel below to start a simple bouncing animation.
+
+-Left Click on an existing blob to select it. You will see it outlined with a dotted circle.
+-After selecting a blob, you can change its attributes using the control panel below.
+    -You will not be able to change any attributes if the animation is currently running, however
 
 ===================
      Build

@@ -4,12 +4,9 @@
 #include "implicitsphere.h"
 
 DisplayWidget::DisplayWidget(QWidget *parent) :
-    QGLWidget(parent), m_selected(false), m_animate(false),
-    m_randRadius(true), m_randWeight(false), m_randVelocity(true), m_randColor(true)
+    QGLWidget(parent), m_selected(false), m_animate(false)
 {
-    m_polygonizer.widget = this;
     m_timer = new QTimer(this);
-    m_time.start();
     connect(m_timer, SIGNAL(timeout()), this, SLOT(updateScene()));
 }
 
@@ -30,7 +27,6 @@ void DisplayWidget::initializeGL() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glLineWidth(1.25);
-
 }
 
 void DisplayWidget::resizeGL(int width, int height) {
@@ -41,9 +37,9 @@ void DisplayWidget::resizeGL(int width, int height) {
 
     //use an orthographic projection in the same dimensions as the draw surface
     glOrtho(0, width, height, 0, -1, 0);
-
     glMatrixMode(GL_MODELVIEW);
 
+    //change dimensions of the polygonizer to new screen dimensions
     m_polygonizer.setBounds(0, 0, width, height);
 }
 
@@ -51,8 +47,10 @@ void DisplayWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
+    //polygonize the scene
     m_polygonizer.polygonize();
 
+    //get the vertex and color buffers to draw
     uint numVertices;
     const float *vertices = m_polygonizer.getVertices(numVertices);
     const float *colors = m_polygonizer.getColors(numVertices);
@@ -68,23 +66,19 @@ void DisplayWidget::paintGL() {
     glDisableClientState(GL_VERTEX_ARRAY);
 
 
-    //draw selected
+    //draw selected surface with a dotted line
     if (m_selected) {
-        glEnable(GL_LINE_STIPPLE);
-        glLineStipple(1, 0xCCCC);
-
         Vector3f color = m_spheres[m_selectedIndex]->getColor();
         Vector2f pos = m_spheres[m_selectedIndex]->getPosition();
         float rad = m_spheres[m_selectedIndex]->getRadius();
 
         glColor3f(color[0], color[1], color[2]);
         glDrawDottedCircle(pos[0], pos[1], rad*3/2);
-
-        glDisable(GL_LINE_STIPPLE);
     }
 }
 
 void DisplayWidget::mousePressEvent(QMouseEvent *event) {
+    //get position of mouse press
     float x = (float)event->x();
     float y = (float)event->y();
     Vector2f v(x,y);
@@ -93,7 +87,7 @@ void DisplayWidget::mousePressEvent(QMouseEvent *event) {
     bool pressed = false;
     bool lastSelected = m_selected;
 
-    //check if existing sphere has been clicked
+    //check if an existing sphere has been clicked
     for (uint i = 0; i < m_spheres.size(); i++) {
         Vector2f c = m_spheres[i]->getPosition();
         float r = m_spheres[i]->getRadius();
@@ -106,15 +100,17 @@ void DisplayWidget::mousePressEvent(QMouseEvent *event) {
     }
 
     if (m_selected && !pressed) {
+        //deselect current sphere
         m_selected = false;
     } else if (m_selected && event->button() & Qt::RightButton) {
+        //delete selected sphere
         if (!lastSelected) {
             m_spheres.erase(m_spheres.begin() + m_selectedIndex);
             m_polygonizer.removeSurface(m_selectedIndex);
         }
         m_selected = false;
     } else if (!m_selected && event->button() & Qt::LeftButton) {
-        //create and add random sphere
+        //create and add random sphere to the scene
         ImplicitSphere *sphere = createSphere(v);
         m_spheres.push_back(sphere);
         m_polygonizer.addSurface(sphere);
@@ -125,7 +121,7 @@ void DisplayWidget::mousePressEvent(QMouseEvent *event) {
 }
 
 void DisplayWidget::mouseMoveEvent(QMouseEvent *event) {
-    //issue move command if a control point is currently selected
+    //move currently selected sphere
     if (m_selected && !m_animate) {
         Vector2f pos(event->x(), event->y());
         m_spheres[m_selectedIndex]->setPosition(pos);
@@ -134,16 +130,13 @@ void DisplayWidget::mouseMoveEvent(QMouseEvent *event) {
     }
 }
 
-void DisplayWidget::mouseReleaseEvent(QMouseEvent *) {
-}
-
 ImplicitSphere *DisplayWidget::createSphere(Vector2f pos) {
+    //randomly generate sphere attributes
     float radius = RADIUS_MIN + (rand() / (float)RAND_MAX)*(RADIUS_MAX - RADIUS_MIN);
     float weight = 1;
 
     Vector3f color = randColor3f(radius*m_spheres.size());
 
-    //random velocity
     float r1 = rand() / (float)RAND_MAX;
     float r2 = rand() / (float)RAND_MAX;
     float dV = VELOCITY_MAX - VELOCITY_MIN;
@@ -154,9 +147,11 @@ ImplicitSphere *DisplayWidget::createSphere(Vector2f pos) {
 }
 
 void DisplayWidget::updateScene() {
+    //determine time since last update
     float timestep = m_time.elapsed() / 1000.0;
     m_time.restart();
 
+    //update all spheres in scene
     for (uint i = 0; i < m_spheres.size(); i++) {
         m_spheres[i]->update(Vector2f(0,0), Vector2f(width(), height()), timestep);
     }
@@ -168,11 +163,13 @@ void DisplayWidget::updateScene() {
 void DisplayWidget::animate(bool on) {
     m_animate = on;
     if (m_animate) {
+        //start animation
         m_timer->start();
         m_time.restart();
         if (m_selected)
             emit sphereSelected(0);
     } else {
+        //stop animation
         m_timer->stop();
         if (m_selected)
             emit sphereSelected(m_spheres[m_selectedIndex]);

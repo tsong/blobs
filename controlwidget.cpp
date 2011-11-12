@@ -1,12 +1,11 @@
 #include "controlwidget.h"
 #include "ui_controlwidget.h"
 
-#include <QDebug>
-
 ControlWidget::ControlWidget(QWidget *parent) :
     QWidget(parent), ui(new Ui::ControlWidget), m_buttonDown(false)
 {
     ui->setupUi(this);
+
     updateRadius();
     updateWeight();
     updateColor();
@@ -14,6 +13,7 @@ ControlWidget::ControlWidget(QWidget *parent) :
 
     connectSignals();
 
+    //controls are disabled since no sphere is currently selected
     disableControls();
 }
 
@@ -36,7 +36,7 @@ void ControlWidget::enableControls() {
 }
 
 void ControlWidget::connectSignals() {
-    connect(ui->animateButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
+    connect(ui->animateButton, SIGNAL(clicked()), this, SLOT(animateClicked()));
     connect(ui->radiusSlider, SIGNAL(valueChanged(int)), this, SLOT(updateRadius()));
     connect(ui->weightSlider, SIGNAL(valueChanged(int)), this, SLOT(updateWeight()));
     connect(ui->dxSlider, SIGNAL(valueChanged(int)), this, SLOT(updateVelocity()));
@@ -47,7 +47,7 @@ void ControlWidget::connectSignals() {
 }
 
 void ControlWidget::disconnectSignals() {
-    disconnect(ui->animateButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
+    disconnect(ui->animateButton, SIGNAL(clicked()), this, SLOT(animateClicked()));
     disconnect(ui->radiusSlider, SIGNAL(valueChanged(int)), this, SLOT(updateRadius()));
     disconnect(ui->weightSlider, SIGNAL(valueChanged(int)), this, SLOT(updateWeight()));
     disconnect(ui->dxSlider, SIGNAL(valueChanged(int)), this, SLOT(updateVelocity()));
@@ -58,6 +58,7 @@ void ControlWidget::disconnectSignals() {
 }
 
 void ControlWidget::changeSphere(const ImplicitSphere *sphere) {
+    //disable controls if no sphere is selected
     if (sphere == 0) {
         disableControls();
         return;
@@ -65,23 +66,26 @@ void ControlWidget::changeSphere(const ImplicitSphere *sphere) {
         enableControls();
     }
 
+    //get attributes of the sphere
     float radius = sphere->getRadius();
     float weight = sphere->getWeight();
     const Vector2f &velocity = sphere->getVelocity();
     const Vector3f &color = sphere->getColor();
 
+    //change values of ui widgets
     disconnectSignals();
-    changeRadius(radius);
-    changeWeight(weight);
-    changeVelocity(velocity);
-    changeColor(color);
+        changeRadius(radius);
+        changeWeight(weight);
+        changeVelocity(velocity);
+        changeColor(color);
     connectSignals();
 
+    //update the text of the labels
     blockSignals(true);
-    updateRadius();
-    updateWeight();
-    updateVelocity();
-    updateColor();
+        updateRadius();
+        updateWeight();
+        updateVelocity();
+        updateColor();
     blockSignals(false);
 }
 
@@ -110,6 +114,7 @@ void ControlWidget::changeColor(Vector3f color) {
 }
 
 void ControlWidget::updateRadius() {
+    //change radius display text
     float v = ui->radiusSlider->value() / 100.0;
     float rad = RADIUS_MIN + v*(RADIUS_MAX - RADIUS_MIN);
     ui->radiusGroupBox->setTitle(QString("Radius: %1").arg((int)rad));
@@ -118,6 +123,7 @@ void ControlWidget::updateRadius() {
 }
 
 void ControlWidget::updateWeight() {
+    //change weight display text
     float v = ui->weightSlider->value() / 100.0;
     float c = WEIGHT_MIN + v*(WEIGHT_MAX - WEIGHT_MIN);
     ui->weightGroupBox->setTitle(QString("Weight: %1").arg(c));
@@ -134,6 +140,7 @@ void ControlWidget::updateColor() {
     int v2 = g*255;
     int v3 = b*255;
 
+    //change color display text
     ui->colorGroupBox->setTitle(QString("Color: (%1,%2,%3)").arg(v1).arg(v2).arg(v3));
 
     emit colorChanged(Vector3f(r,g,b));
@@ -146,13 +153,14 @@ void ControlWidget::updateVelocity() {
     float vy = ui->dySlider->value() / 100.0;
     float dy = VELOCITY_MIN + vy*(VELOCITY_MAX - VELOCITY_MIN);
 
+    //change velocity display text
     ui->velocityGroupBox->setTitle(QString("Velocity: (%1,%2)").arg((int)dx).arg((int)dy));
 
     emit velocityChanged(Vector2f(dx,dy));
 }
 
-void ControlWidget::buttonClicked()
-{
+void ControlWidget::animateClicked() {
+    //this button acts like a toggle button, toggling betewen up and down states
     m_buttonDown = !m_buttonDown;
     ui->animateButton->setDown(m_buttonDown);
     emit animate(m_buttonDown);
