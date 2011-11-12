@@ -8,7 +8,7 @@ class ImplicitSphere : public ImplicitSurface {
 public:
     ImplicitSphere(Vector2f position, float radius);
     ~ImplicitSphere();
-    float blend(float x, float y);
+    float fieldValue(float x, float y);
     void blendGrid(float *grid, int rows, int columns, Vector2f origin, Vector2f dimensions);
 
 protected:

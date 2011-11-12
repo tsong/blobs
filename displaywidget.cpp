@@ -77,7 +77,7 @@ void DisplayWidget::mousePressEvent(QMouseEvent *event) {
     float x = (float)event->x();
     float y = (float)event->y();
 
-    ImplicitSphere *sphere = new ImplicitSphere(Vector2f(x,y), 10);
+    ImplicitSphere *sphere = new ImplicitSphere(Vector2f(x,y), 40);
     m_polygonizer.addSurface(sphere);
     repaint();
 }

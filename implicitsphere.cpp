@@ -21,7 +21,7 @@ ImplicitSphere::ImplicitSphere(Vector2f position, float radius)
 ImplicitSphere::~ImplicitSphere() {}
 
 
-float ImplicitSphere::blend(float x, float y) {
+float ImplicitSphere::fieldValue(float x, float y) {
     float dx = x - m_position[0];
     float dy = y - m_position[1];
     float dist = sqrt(dx*dx + dy*dy);
@@ -83,7 +83,7 @@ void ImplicitSphere::blendGrid(float *grid, int rows, int columns,
     //update the grid
     for (int i = boundRow; i < boundRow + boundHeight; i++) {
         for (int j = boundCol; j < boundCol + boundWidth; j++) {
-            grid[i*columns + j] += blend(origin[0] + dx*j, origin[1] + dy*i);
+            grid[i*columns + j] += fieldValue(origin[0] + dx*j, origin[1] + dy*i);
         }
     }
 

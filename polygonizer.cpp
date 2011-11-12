@@ -7,6 +7,9 @@ Polygonizer::Polygonizer(uint rows, uint columns, float x, float y, float width,
     : m_rows(rows), m_columns(columns), m_origin(x,y), m_dimensions(width, height),
     m_isPolygonized(false), m_numVertices(0), m_maxVertices(0)
 {
+    m_vertexGrid = new Vertex[rows*columns];
+    resetVertexGrid();
+
     m_grid = new float[rows*columns];
     m_interiorPoints = new bool[rows*columns];
 
@@ -37,6 +40,7 @@ void Polygonizer::setBounds(float x, float y, float width, float height) {
     m_origin = Vector2f(x,y);
     m_dimensions = Vector2f(width, height);
     m_isPolygonized = false;
+    resetVertexGrid();
 }
 
 
@@ -102,6 +106,11 @@ void Polygonizer::polygonize() {
     m_isPolygonized = true;
 }
 
+
+bool Polygonizer::isPolygonized() {
+    return m_isPolygonized;
+}
+
 const float *Polygonizer::getVertices(uint &numVertices) {
     if (m_isPolygonized) {
         numVertices = m_numVertices;
@@ -131,6 +140,19 @@ const float *Polygonizer::getColors(uint &numVertices) {
 
 
 
+void Polygonizer::resetVertexGrid() {
+    float dx = m_dimensions[0] / (m_columns-1);
+    float dy = m_dimensions[1] / (m_rows-1);
+    for (uint i = 0; i < m_rows; i++) {
+        for (uint j = 0; j < m_columns; j++) {
+            Vertex &v = m_vertexGrid[i*m_columns + j];
+            v.pos = Vector2f(m_origin[0] + j*dx, m_origin[1] + i*dy);
+            v.color = Vector3f(0,0,0);
+            v.normal = Vector3f(0,0,0);
+        }
+    }
+}
+
 Vector2f Polygonizer::toWorldCoord(float row, float col) {
     float dx = m_dimensions[0] / (m_columns-1);
     float dy = m_dimensions[1] / (m_rows-1);
@@ -148,7 +170,7 @@ float Polygonizer::fieldValue(float i, float j) {
     Vector2f v = toWorldCoord(i,j);
 
     for (uint i = 0; i < m_surfaces.size(); i++) {
-        f += m_surfaces[i]->blend(v[0], v[1]);
+        f += m_surfaces[i]->fieldValue(v[0], v[1]);
     }
 
     return f;

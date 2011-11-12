@@ -17,13 +17,6 @@
 
 using namespace std;
 
-typedef struct Vertex {
-    Vector2f pos;
-    Vector3f color;
-    Vector3f normal;
-} Vertex;
-
-
 class Polygonizer {
 
 public:
@@ -44,7 +37,10 @@ public:
     const float *getNormals(uint &numVertices);
     const float *getColors(uint &numVertices);
 
+    bool isPolygonized();
+
 protected:
+    void resetVertexGrid();
     void addTriangle(Vector2f a, Vector2f b, Vector2f c);
     Vector2f toWorldCoord(float row, float col);
     Vector2f toWorldCoord(uint idx);
@@ -58,6 +54,7 @@ protected:
 
     vector<ImplicitSurface*> m_surfaces;
 
+    Vertex *m_vertexGrid;
     float *m_grid;
     bool *m_interiorPoints;
     bool m_isPolygonized;
