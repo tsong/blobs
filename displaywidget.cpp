@@ -90,7 +90,7 @@ void DisplayWidget::mousePressEvent(QMouseEvent *event) {
 
     //used to determine if current object should be deselected
     bool pressed = false;
-    uint lastIndex = m_selectedIndex;
+    bool previousSelected = m_selected;
 
     //check if existing sphere has been clicked
     for (uint i = 0; i < m_spheres.size(); i++) {
@@ -107,8 +107,10 @@ void DisplayWidget::mousePressEvent(QMouseEvent *event) {
     if (m_selected && !pressed) {
         m_selected = false;
     } else if (m_selected && event->button() & Qt::RightButton) {
-        m_spheres.erase(m_spheres.begin() + m_selectedIndex);
-        m_polygonizer.removeSurface(m_selectedIndex);
+        if (!previousSelected) {
+            m_spheres.erase(m_spheres.begin() + m_selectedIndex);
+            m_polygonizer.removeSurface(m_selectedIndex);
+        }
         m_selected = false;
     } else if (!m_selected && event->button() & Qt::LeftButton) {
         Vector3f color = randColor3f(rand());

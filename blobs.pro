@@ -16,7 +16,8 @@ SOURCES += main.cpp\
     utils/glutils.cpp \
     utils/pointutils.cpp \
     polygonizer.cpp \
-    implicitsphere.cpp
+    implicitsphere.cpp \
+    controlwidget.cpp
 
 HEADERS  += mainwindow.h \
     displaywidget.h \
@@ -26,9 +27,11 @@ HEADERS  += mainwindow.h \
     utils/pointutils.h \
     polygonizer.h \
     implicitsurface.h \
-    implicitsphere.h
+    implicitsphere.h \
+    controlwidget.h
 
-FORMS    +=
+FORMS    += \
+    controlwidget.ui
 
 OTHER_FILES += \
     README
