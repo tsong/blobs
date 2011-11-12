@@ -1,12 +1,13 @@
 #ifndef POLYGONIZER_H
 #define POLYGONIZER_H
 
+#include <QGLWidget>
 #include <vector>
 #include "utils/vector.h"
 #include "implicitsurface.h"
 
-#define DEFAULT_ROWS 300
-#define DEFAULT_COLUMNS 300
+#define DEFAULT_ROWS 200
+#define DEFAULT_COLUMNS 200
 #define DEFAULT_X 0
 #define DEFAULT_Y 0
 #define DEFAULT_WIDTH 1
@@ -37,14 +38,26 @@ public:
     const float *getColors(uint &size);
 
 protected:
+    void addTriangle(Vector2f a, Vector2f b, Vector2f c);
+    Vector2f toWorldCoord(float row, float col);
+    Vector2f toWorldCoord(uint idx);
+    float fieldValue(float i, float j);
+    void polygonizeCell(uint row, uint col);
+    vector<Vector2f> interopolateEdges(uint row, uint col);
+
+protected:
     uint m_rows, m_columns;
     Vector2f m_origin, m_dimensions;
 
     vector<ImplicitSurface*> m_surfaces;
 
     float *m_grid;
+    bool *m_interiorPoints;
     bool m_isPolygonized;
 
+    uint m_numVertices;
+public:
+    QGLWidget *widget;
 };
 
 #endif // POLYGONIZER_H

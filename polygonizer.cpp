@@ -5,13 +5,15 @@
 
 Polygonizer::Polygonizer(uint rows, uint columns, float x, float y, float width, float height)
     : m_rows(rows), m_columns(columns), m_origin(x,y), m_dimensions(width, height),
-    m_isPolygonized(false)
+    m_isPolygonized(false), m_numVertices(0)
 {
     m_grid = new float[rows*columns];
+    m_interiorPoints = new bool[rows*columns];
 }
 
 Polygonizer::~Polygonizer() {
     delete[] m_grid;
+    delete[] m_interiorPoints;
 }
 
 void Polygonizer::setBounds(float x, float y, float width, float height) {
@@ -56,69 +58,28 @@ const ImplicitSurface *Polygonizer::readSurface(uint position) const {
 void Polygonizer::polygonize() {
     if (m_isPolygonized) return;
 
-    //memset(m_grid, 0, m_rows*m_columns);
-    for (uint i = 0; i < m_rows*m_columns; i++)
-        m_grid[i] = 0;
+    //zero the grid and interior points matrix
+    memset(m_grid, 0, m_rows*m_columns*sizeof(float));
+    memset(m_interiorPoints, 0, m_rows*m_columns*sizeof(bool));
 
-
+    //blend the grid using all the implicit surfaces
     for (uint i = 0; i < m_surfaces.size(); i++) {
         m_surfaces[i]->blendGrid(m_grid, m_rows, m_columns, m_origin, m_dimensions);
     }
 
-    glBegin(GL_POINTS);
-
-    //distance traveled in one grid step
-    float dx = m_dimensions[0] / m_columns;
-    float dy = m_dimensions[1] / m_rows;
-
-    //compute the grid of points inside and outside of isosurface
+    //calculate interior points matrix
     for (uint i = 0; i < m_rows; i++) {
-        float y = m_origin[1] + i*dy;
-
         for (uint j = 0; j < m_columns; j++) {
-            float x = m_origin[0] + j*dx;
-
-            float v = m_grid[i*m_columns + j];
-            //if (v >= ISOVALUE) {
-                glColor3f(v,v,v);
-                glVertex2f(x,y);
-            //}
+            m_interiorPoints[i*m_columns+j] = m_grid[i*m_columns+j] >= ISOVALUE;
         }
     }
-    glEnd();
 
-    /*glBegin(GL_POINTS);
-
-    //distance traveled in one grid step
-    float dx = m_width / m_columns;
-    float dy = m_height / m_rows;
-
-    //compute the grid of points inside and outside of isosurface
-    for (uint i = 0; i < m_rows; i++) {
-        float y = m_origin[1] + i*dy;
-
-        for (uint j = 0; j < m_columns; j++) {
-            float x = m_origin[0] + j*dx;
-
-            //sum the contribution of the blending functions of all surfaces
-            float sum = 0;
-            for (uint k = 0; k < m_surfaces.size(); k++) {
-                sum += m_surfaces[k]->blend(x,y);
-            }
-
-            float c = sum > 1 ? 1 : sum;
-            glColor3f(c,c,c);
-            //glVertex2d(x,y);
-
-            m_grid[i*m_columns + j] = sum;
-            if (m_grid[i*m_columns + j] >= ISOVALUE) {
-                m_vertices.push_back(Vector2f(x,y));
-            }
+    //convert each rectangular cell to triangles
+    for (uint i = 0; i < m_rows-1; i++) {
+        for (uint j = 0; j < m_columns-1; j++) {
+            polygonizeCell(i,j);
         }
     }
-    glEnd();*/
-
-    //qDebug() << m_vertices.size();
 }
 
 const float *Polygonizer::getVertices(uint &size) {
@@ -131,4 +92,210 @@ const float *Polygonizer::getNormals(uint &size) {
 
 const float *Polygonizer::getColors(uint &size) {
 
+}
+
+
+
+Vector2f Polygonizer::toWorldCoord(float row, float col) {
+    float dx = m_dimensions[0] / (m_columns-1);
+    float dy = m_dimensions[1] / (m_rows-1);
+    return Vector2f(m_origin[0] + dx*col, m_origin[1] + dy*row);
+}
+
+Vector2f Polygonizer::toWorldCoord(uint idx) {
+    uint row = idx / m_columns;
+    uint col = idx % m_columns;
+    return toWorldCoord(row, col);
+}
+
+float Polygonizer::fieldValue(float i, float j) {
+    float f = 0;
+    Vector2f v = toWorldCoord(i,j);
+
+    for (uint i = 0; i < m_surfaces.size(); i++) {
+        f += m_surfaces[i]->blend(v[0], v[1]);
+    }
+
+    return f;
+}
+
+vector<Vector2f> Polygonizer::interopolateEdges(uint row, uint col) {
+    //indices of top-left, top-right, bottom-left, and bottom-right points respectively
+    uint topLeft = (row+0)*m_columns + col+0;
+    uint topRight = (row+0)*m_columns + col+1;
+    uint botLeft = (row+1)*m_columns + col+0;
+    uint botRight = (row+1)*m_columns + col+1;
+
+    uint edges[4][2] = {
+                        {topLeft,topRight},  //top edge
+                        {topLeft, botLeft},  //left edge
+                        {botLeft, botRight}, //bottom edge
+                        {topRight, botRight} //right edge
+                     };
+
+    Vector2f startingPositions[4] = {
+                                     toWorldCoord(topLeft),
+                                     toWorldCoord(topLeft),
+                                     toWorldCoord(botLeft),
+                                     toWorldCoord(topRight)
+                                    };
+
+    float dx = m_dimensions[0] / (m_columns-1);
+    float dy = m_dimensions[1] / (m_rows-1);
+    Vector2f directions[4] =  {
+                               Vector2f(dx,0),
+                               Vector2f(0,dy),
+                               Vector2f(dx,0),
+                               Vector2f(0,dy)
+                              };
+
+    vector<Vector2f> points;
+    for (uint i = 0; i < 4; i++) {
+       //check if the edge has one point inside surface and one outside surface
+       if (m_interiorPoints[edges[i][0]] ^ m_interiorPoints[edges[i][1]]) {
+            //linear interpolation ratio
+            float a = m_grid[edges[i][0]];
+            float b = m_grid[edges[i][1]];
+            float m = ISOVALUE;
+            float r = abs(m-a)/abs(b-a);
+
+            //calculate and add the interpolated point (in world coordinates)
+            points.push_back(startingPositions[i] + (directions[i]*r));
+       }
+    }
+
+
+    /*Vector2f v;
+    glColor3f(0,0,0);
+    glBegin(GL_LINE_STRIP);
+    v = toWorldCoord(topLeft);
+    glVertex2f(v[0], v[1]);
+    v = toWorldCoord(topRight);
+    glVertex2f(v[0], v[1]);
+    v = toWorldCoord(botRight);
+    glVertex2f(v[0], v[1]);
+    v = toWorldCoord(botLeft);
+    glVertex2f(v[0], v[1]);
+    glEnd();*/
+
+
+    return points;
+}
+
+void Polygonizer::polygonizeCell(uint row, uint col) {
+    vector<Vector2f> interp = interopolateEdges(row, col);
+
+    //flat indices of each corner point of the cell
+    uint cornerIndices[4] = {
+        (row+0)*m_columns + col+0,
+        (row+0)*m_columns + col+1,
+        (row+1)*m_columns + col+0,
+        (row+1)*m_columns + col+1
+    };
+
+    //corners which are interior points
+    uint interiorCorners[4];
+    uint numInterior = 0;
+
+    //calculate binary representation of the current cell
+    uint combination = 0;
+    for (uint i = 0; i < 4; i++) {
+            float v = m_grid[cornerIndices[i]];
+            combination = (combination << 1) | (v >= ISOVALUE ? 1 : 0);
+
+            if (v >= ISOVALUE)
+                interiorCorners[numInterior++] = i;
+    }
+
+    /*Vector2f p = toWorldCoord(row, col);
+    float dx = m_dimensions[0] / (m_columns-1);
+    float dy = m_dimensions[1] / (m_rows-1);
+    glColor3f(1,0,0);
+    uint pad = 6;
+    widget->renderText(p[0]+dx/2-pad, p[1]+dy/2+pad, 0, QString("%1").arg(combination));*/
+
+    /*glColor3f(0,0,1);
+    for (uint i = 0; i < interp.size(); i++) {
+        Vector2f v = interp[i];
+        glDrawCircle(v[0],v[1],3);
+    }*/
+
+
+    Vector2f corner[4] = {toWorldCoord(cornerIndices[0]),
+                          toWorldCoord(cornerIndices[1]),
+                          toWorldCoord(cornerIndices[2]),
+                          toWorldCoord(cornerIndices[3])};
+
+    glColor3f(0,1,0);
+    glBegin(GL_TRIANGLES);
+    switch(combination) {
+    case 1:  //0001
+    case 2:  //0010
+    case 4:  //0100
+    case 8:  //1000
+         addTriangle(corner[interiorCorners[0]], interp[0], interp[1]);
+        break;
+
+    case 3:  //0011
+    case 5:  //0101
+    case 10: //1010
+    case 12: //1100
+        addTriangle(corner[interiorCorners[0]], interp[1], corner[interiorCorners[1]]);
+        addTriangle(corner[interiorCorners[0]], interp[0], interp[1]);
+        break;
+
+    case 6:  //0110
+        addTriangle(corner[1], interp[0], interp[3]);
+        addTriangle(corner[2], interp[1], interp[2]);
+        if (fieldValue(col+0.5, row+0.5) >= ISOVALUE) {
+            addTriangle(interp[0], interp[1], interp[2]);
+            addTriangle(interp[0], interp[2], interp[3]);
+        }
+        break;
+    case 9:  //1001
+        addTriangle(corner[0], interp[0], interp[1]);
+        addTriangle(corner[3], interp[2], interp[3]);
+        if (fieldValue(col+0.5, row+0.5) >= ISOVALUE) {
+            addTriangle(interp[0], interp[2], interp[3]);
+            addTriangle(interp[0], interp[1], interp[2]);
+        }
+        break;
+
+    case 7:  //0111
+        addTriangle(corner[3], interp[0], interp[1]);
+        addTriangle(corner[3], interp[0], corner[1]);
+        addTriangle(corner[3], interp[1], corner[2]);
+        break;
+    case 11: //1011
+        addTriangle(corner[2], interp[0], interp[1]);
+        addTriangle(corner[2], interp[0], corner[0]);
+        addTriangle(corner[2], interp[1], corner[3]);
+        break;
+    case 13: //1101
+        addTriangle(corner[1], interp[0], interp[1]);
+        addTriangle(corner[1], interp[0], corner[0]);
+        addTriangle(corner[1], interp[1], corner[3]);
+        break;
+    case 14: //1110
+        addTriangle(corner[0], interp[0], interp[1]);
+        addTriangle(corner[0], interp[0], corner[2]);
+        addTriangle(corner[0], interp[1], corner[1]);
+        break;
+
+    case 15: //1111
+        addTriangle(corner[0], corner[1], corner[2]);
+        addTriangle(corner[1], corner[2], corner[3]);
+        break;
+
+    case 0:  //0000
+    default:
+        break;
+    }
+    glEnd();
+}
+
+void Polygonizer::addTriangle(Vector2f a, Vector2f b, Vector2f c) {
+    glVertex2f(a[0],a[1]);
+    glVertex2f(b[0],b[1]);
+    glVertex2f(c[0],c[1]);
 }

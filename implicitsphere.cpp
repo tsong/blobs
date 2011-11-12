@@ -3,6 +3,16 @@
 
 #include "utils/glutils.h"
 
+#define EPS 1E-6
+inline int clampUp(float v) {
+    int u = v;
+    if (abs(u-v) < EPS)
+        return u;
+    else
+        return (int)(v+1);
+}
+
+
 ImplicitSphere::ImplicitSphere(Vector2f position, float radius)
     : m_position(position), m_radius(2*radius)
 {
@@ -37,16 +47,16 @@ void ImplicitSphere::blendGrid(float *grid, int rows, int columns,
     glVertex2f(m_position[0] - m_radius, m_position[1] + m_radius);*/
 
     //size of each cell in the grid
-    float dx = dimensions[0] / columns;
-    float dy = dimensions[1] / rows;
+    float dx = dimensions[0] / (columns-1);
+    float dy = dimensions[1] / (rows-1);
 
     //bounding box of grid cells to blend
-    int boundCol = (m_position[0] - m_radius - origin[0])/dx;
-    int boundRow = (m_position[1] - m_radius - origin[0])/dy;
-    //int boundWidth = (m_position[0] + m_radius - origin[0])/dx - boundCol;
-    //int boundHeight = (m_position[1] + m_radius - origin[0])/dy - boundRow;
-    int boundWidth = m_radius*2 / dx;
-    int boundHeight = m_radius*2 / dy;
+    int boundCol = clampUp((m_position[0] - m_radius - origin[0])/dx);
+    int boundRow = clampUp((m_position[1] - m_radius - origin[1])/dy);
+    int boundWidth = (m_position[0] + m_radius - origin[0])/dx - boundCol;
+    int boundHeight = (m_position[1] + m_radius - origin[1])/dy - boundRow;
+    //int boundWidth = m_radius*2 / dx;
+    //int boundHeight = m_radius*2 / dy;
 
     /*glVertex2f(origin[0] + (boundCol)*dx, origin[1] + (boundRow)*dy);
     glVertex2f(origin[0] + (boundCol+boundWidth)*dx, origin[1] + (boundRow)*dy);
@@ -58,8 +68,8 @@ void ImplicitSphere::blendGrid(float *grid, int rows, int columns,
     //clamp the bounding box
     boundRow = boundRow < 0 ? 0 : boundRow;
     boundCol = boundCol < 0 ? 0 : boundCol;
-    boundWidth = (boundCol + boundWidth) >= columns ? columns-boundCol-1 : boundWidth;
-    boundHeight = (boundRow + boundHeight) >= rows ? rows-boundRow-1 : boundHeight;
+    boundWidth = (boundCol + boundWidth) >= columns ? columns-boundCol : boundWidth;
+    boundHeight = (boundRow + boundHeight) >= rows ? rows-boundRow : boundHeight;
 
     if (boundWidth <= 0 || boundHeight <= 0) return;
 

@@ -12,6 +12,7 @@ DisplayWidget::DisplayWidget(QWidget *parent, QUndoStack *undoStack) :
 
     //each action will redraw the scene
     connect(m_undoStack, SIGNAL(indexChanged(int)), this, SLOT(repaint()));
+    m_polygonizer.widget = this;
 }
 
 DisplayWidget::~DisplayWidget() {
@@ -76,7 +77,7 @@ void DisplayWidget::mousePressEvent(QMouseEvent *event) {
     float x = (float)event->x();
     float y = (float)event->y();
 
-    ImplicitSphere *sphere = new ImplicitSphere(Vector2f(x,y), 40);
+    ImplicitSphere *sphere = new ImplicitSphere(Vector2f(x,y), 10);
     m_polygonizer.addSurface(sphere);
     repaint();
 }
