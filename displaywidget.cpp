@@ -92,7 +92,6 @@ void DisplayWidget::mousePressEvent(QMouseEvent *event) {
     //used to determine if current object should be deselected
     bool pressed = false;
     bool lastSelected = m_selected;
-    uint lastSelectedIndex = m_selectedIndex;
 
     //check if existing sphere has been clicked
     for (uint i = 0; i < m_spheres.size(); i++) {
@@ -115,19 +114,13 @@ void DisplayWidget::mousePressEvent(QMouseEvent *event) {
         }
         m_selected = false;
     } else if (!m_selected && event->button() & Qt::LeftButton) {
-        Vector3f color = randColor3f(rand());
-        float r1 = rand() / (float)RAND_MAX;
-        float r2 = rand() / (float)RAND_MAX;
-        Vector2f velocity = Vector2f(200*r1, 200*r2);
-
-        ImplicitSphere *sphere = new ImplicitSphere(v, 40, color, velocity);
+        //create and add random sphere
+        ImplicitSphere *sphere = createSphere(v);
         m_spheres.push_back(sphere);
         m_polygonizer.addSurface(sphere);
     }
 
-    if (m_selected && lastSelectedIndex != m_selectedIndex)
-        emit sphereSelected(m_spheres[m_selectedIndex]);
-
+    emit sphereSelected(m_selected && !m_animate ? m_spheres[m_selectedIndex] : 0);
     repaint();
 }
 
@@ -142,6 +135,22 @@ void DisplayWidget::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void DisplayWidget::mouseReleaseEvent(QMouseEvent *) {
+}
+
+ImplicitSphere *DisplayWidget::createSphere(Vector2f pos) {
+    float radius = RADIUS_MIN + (rand() / (float)RAND_MAX)*(RADIUS_MAX - RADIUS_MIN);
+    float weight = 1;
+
+    Vector3f color = randColor3f(radius*m_spheres.size());
+
+    //random velocity
+    float r1 = rand() / (float)RAND_MAX;
+    float r2 = rand() / (float)RAND_MAX;
+    float dV = VELOCITY_MAX - VELOCITY_MIN;
+    Vector2f velocity = Vector2f(VELOCITY_MIN + r1*dV, VELOCITY_MIN + r2*dV);
+
+    ImplicitSphere *sphere = new ImplicitSphere(pos, radius, color, velocity, weight);
+    return sphere;
 }
 
 void DisplayWidget::updateScene() {
@@ -161,8 +170,12 @@ void DisplayWidget::animate(bool on) {
     if (m_animate) {
         m_timer->start();
         m_time.restart();
+        if (m_selected)
+            emit sphereSelected(0);
     } else {
         m_timer->stop();
+        if (m_selected)
+            emit sphereSelected(m_spheres[m_selectedIndex]);
     }
 }
 

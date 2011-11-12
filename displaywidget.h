@@ -53,6 +53,8 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *);
 
+    ImplicitSphere *createSphere(Vector2f pos);
+
 protected slots:
     void updateScene();
 

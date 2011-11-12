@@ -13,10 +13,26 @@ ControlWidget::ControlWidget(QWidget *parent) :
     updateVelocity();
 
     connectSignals();
+
+    disableControls();
 }
 
 ControlWidget::~ControlWidget() {
     delete ui;
+}
+
+void ControlWidget::disableControls() {
+    ui->radiusGroupBox->setEnabled(false);
+    ui->weightGroupBox->setEnabled(false);
+    ui->velocityGroupBox->setEnabled(false);
+    ui->colorGroupBox->setEnabled(false);
+}
+
+void ControlWidget::enableControls() {
+    ui->radiusGroupBox->setEnabled(true);
+    ui->weightGroupBox->setEnabled(true);
+    ui->velocityGroupBox->setEnabled(true);
+    ui->colorGroupBox->setEnabled(true);
 }
 
 void ControlWidget::connectSignals() {
@@ -28,11 +44,6 @@ void ControlWidget::connectSignals() {
     connect(ui->redSlider, SIGNAL(valueChanged(int)), this, SLOT(updateColor()));
     connect(ui->greenSlider, SIGNAL(valueChanged(int)), this, SLOT(updateColor()));
     connect(ui->blueSlider, SIGNAL(valueChanged(int)), this, SLOT(updateColor()));
-
-    connect(ui->radiusRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeRadius(bool)));
-    connect(ui->weightRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeWeight(bool)));
-    connect(ui->velocityRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeVelocity(bool)));
-    connect(ui->colorRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeColor(bool)));
 }
 
 void ControlWidget::disconnectSignals() {
@@ -44,14 +55,16 @@ void ControlWidget::disconnectSignals() {
     disconnect(ui->redSlider, SIGNAL(valueChanged(int)), this, SLOT(updateColor()));
     disconnect(ui->greenSlider, SIGNAL(valueChanged(int)), this, SLOT(updateColor()));
     disconnect(ui->blueSlider, SIGNAL(valueChanged(int)), this, SLOT(updateColor()));
-
-    disconnect(ui->radiusRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeRadius(bool)));
-    disconnect(ui->weightRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeWeight(bool)));
-    disconnect(ui->velocityRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeVelocity(bool)));
-    disconnect(ui->colorRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeColor(bool)));
 }
 
 void ControlWidget::changeSphere(const ImplicitSphere *sphere) {
+    if (sphere == 0) {
+        disableControls();
+        return;
+    } else {
+        enableControls();
+    }
+
     float radius = sphere->getRadius();
     float weight = sphere->getWeight();
     const Vector2f &velocity = sphere->getVelocity();

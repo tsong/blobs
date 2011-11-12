@@ -24,11 +24,6 @@ signals:
     void velocityChanged(Vector2f);
     void colorChanged(Vector3f);
 
-    void randomizeRadius(bool);
-    void randomizeWeight(bool);
-    void randomizeVelocity(bool);
-    void randomizeColor(bool);
-
 public slots:
     void changeSphere(const ImplicitSphere *sphere);
     void changeRadius(float radius);
@@ -37,6 +32,8 @@ public slots:
     void changeColor(Vector3f color);
 
 private:
+    void disableControls();
+    void enableControls();
     void disconnectSignals();
     void connectSignals();
     Ui::ControlWidget *ui;
