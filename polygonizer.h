@@ -36,7 +36,8 @@ public:
     const float *getNormals(uint &numVertices);
     const float *getColors(uint &numVertices);
 
-    bool isPolygonized();
+    bool isCached();
+    void invalidateCache();
 
 protected:
     void resetGrid();

@@ -16,6 +16,9 @@ Vector3f randColor3f(uint seed);
 //draws a circle at (x,y) with radius r using OpenGL
 void glDrawCircle(float x, float y, float r);
 
+//draws an unfilled dotted circle at (x,y) with radius r using OpenGL
+void glDrawDottedCircle(float x, float y, float r);
+
 //creates and returns a display list of a circle with radius r
 GLuint glCircleList(float r);
 

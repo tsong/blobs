@@ -7,6 +7,9 @@
 
 #include "utils/vector.h"
 #include "polygonizer.h"
+#include "implicitsphere.h"
+
+#define FPS 60
 
 using namespace std;
 
@@ -27,15 +30,23 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *);
 
+protected slots:
+    void updateScene();
+
 protected:
     //All interactions are pushed to this stack
 
     Polygonizer m_polygonizer;
 
+    vector<ImplicitSphere*> m_spheres;
+
     //tracks selected surface for movement
     bool m_selected;
     uint m_selectedIndex;
     int m_moveCommandId;
+
+    QTimer *m_timer;
+    bool m_animate;
 };
 
 #endif // DISPLAYWIDGET_H

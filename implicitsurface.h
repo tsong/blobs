@@ -18,8 +18,6 @@ public:
     virtual ~ImplicitSurface() {}
     virtual float fieldValue(float x, float y) = 0;
     virtual void blendGrid(Vertex *grid, int rows, int columns, Vector2f origin, Vector2f dimensions) = 0;
-    virtual void setColor(Vector3f &color) = 0;
-    virtual const Vector3f &getColor() = 0;
 protected:
     ImplicitSurface() {}
 };

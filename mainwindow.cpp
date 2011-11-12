@@ -12,7 +12,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->setCentralWidget(m_displayWidget);
 
-
     resize(MAIN_WINDOW_DEFAULT_WIDTH, MAIN_WINDOW_DEFAULT_HEIGHT);
 }
 

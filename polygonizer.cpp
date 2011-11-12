@@ -92,8 +92,12 @@ void Polygonizer::polygonize() {
 }
 
 
-bool Polygonizer::isPolygonized() {
+bool Polygonizer::isCached() {
     return m_isPolygonized;
+}
+
+void Polygonizer::invalidateCache() {
+    m_isPolygonized = false;
 }
 
 const float *Polygonizer::getVertices(uint &numVertices) {

@@ -13,8 +13,8 @@ inline int clampUp(float v) {
 }
 
 
-ImplicitSphere::ImplicitSphere(Vector2f position, float radius, Vector3f color)
-    : m_position(position), m_radius(2*radius), m_color(color)
+ImplicitSphere::ImplicitSphere(Vector2f position, float radius, Vector3f color, Vector2f velocity)
+    : m_position(position), m_radius(2*radius), m_color(color), m_velocity(velocity)
 {
 }
 
@@ -90,9 +90,6 @@ void ImplicitSphere::blendGrid(Vertex *grid, int rows, int columns,
             v.color = m_color*f + v.color;
             v.fieldValue += f;
             v.isInterior = v.fieldValue >= ISOVALUE;
-
-            if (f > 0.1)
-                int x = 0;
         }
     }
 
@@ -108,5 +105,35 @@ void ImplicitSphere::setColor(Vector3f &color) {
 
 const Vector3f &ImplicitSphere::getColor() {
     return m_color;
+}
+
+void ImplicitSphere::setPosition(Vector2f &position) {
+    m_position = position;
+}
+
+const Vector2f &ImplicitSphere::getPosition() {
+    return m_position;
+}
+
+void ImplicitSphere::setRadius(float radius) {
+    m_radius = 2*radius;
+}
+
+float ImplicitSphere::getRadius() {
+    return m_radius/2;
+}
+
+void ImplicitSphere::update(Vector2f origin, Vector2f dimensions, float timestep) {
+    m_position = m_position + m_velocity*timestep;
+
+    for (uint i = 0; i < 2; i++) {
+        if (m_position[i] - m_radius/2 < origin[i]) {
+            m_position[i] = origin[i] + m_radius/2;
+            m_velocity[i] *= -1;
+        } else if (m_position[i] + m_radius/2 > dimensions[i]) {
+            m_position[i] = dimensions[i] - m_radius/2;
+            m_velocity[i] *= -1;
+        }
+    }
 }
 
