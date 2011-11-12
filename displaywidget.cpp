@@ -4,12 +4,13 @@
 #include "implicitsphere.h"
 
 DisplayWidget::DisplayWidget(QWidget *parent) :
-    QGLWidget(parent), m_selected(false), m_animate(false)
+    QGLWidget(parent), m_selected(false), m_animate(false),
+    m_randRadius(true), m_randWeight(false), m_randVelocity(true), m_randColor(true)
 {
     m_polygonizer.widget = this;
     m_timer = new QTimer(this);
+    m_time.start();
     connect(m_timer, SIGNAL(timeout()), this, SLOT(updateScene()));
-    //m_timer->start(1000.0 / FPS);
 }
 
 DisplayWidget::~DisplayWidget() {
@@ -90,7 +91,8 @@ void DisplayWidget::mousePressEvent(QMouseEvent *event) {
 
     //used to determine if current object should be deselected
     bool pressed = false;
-    bool previousSelected = m_selected;
+    bool lastSelected = m_selected;
+    uint lastSelectedIndex = m_selectedIndex;
 
     //check if existing sphere has been clicked
     for (uint i = 0; i < m_spheres.size(); i++) {
@@ -107,7 +109,7 @@ void DisplayWidget::mousePressEvent(QMouseEvent *event) {
     if (m_selected && !pressed) {
         m_selected = false;
     } else if (m_selected && event->button() & Qt::RightButton) {
-        if (!previousSelected) {
+        if (!lastSelected) {
             m_spheres.erase(m_spheres.begin() + m_selectedIndex);
             m_polygonizer.removeSurface(m_selectedIndex);
         }
@@ -116,19 +118,22 @@ void DisplayWidget::mousePressEvent(QMouseEvent *event) {
         Vector3f color = randColor3f(rand());
         float r1 = rand() / (float)RAND_MAX;
         float r2 = rand() / (float)RAND_MAX;
-        Vector2f velocity = Vector2f(501*r1, 501*r2);
+        Vector2f velocity = Vector2f(200*r1, 200*r2);
 
         ImplicitSphere *sphere = new ImplicitSphere(v, 40, color, velocity);
         m_spheres.push_back(sphere);
         m_polygonizer.addSurface(sphere);
     }
 
+    if (m_selected && lastSelectedIndex != m_selectedIndex)
+        emit sphereSelected(m_spheres[m_selectedIndex]);
+
     repaint();
 }
 
 void DisplayWidget::mouseMoveEvent(QMouseEvent *event) {
     //issue move command if a control point is currently selected
-    if (m_selected) {
+    if (m_selected && !m_animate) {
         Vector2f pos(event->x(), event->y());
         m_spheres[m_selectedIndex]->setPosition(pos);
         m_polygonizer.invalidateCache();
@@ -140,10 +145,59 @@ void DisplayWidget::mouseReleaseEvent(QMouseEvent *) {
 }
 
 void DisplayWidget::updateScene() {
+    float timestep = m_time.elapsed() / 1000.0;
+    m_time.restart();
+
     for (uint i = 0; i < m_spheres.size(); i++) {
-        m_spheres[i]->update(Vector2f(0,0), Vector2f(width(), height()), 1.0/FPS);
+        m_spheres[i]->update(Vector2f(0,0), Vector2f(width(), height()), timestep);
     }
 
     m_polygonizer.invalidateCache();
     repaint();
+}
+
+void DisplayWidget::animate(bool on) {
+    m_animate = on;
+    if (m_animate) {
+        m_timer->start();
+        m_time.restart();
+    } else {
+        m_timer->stop();
+    }
+}
+
+void DisplayWidget::changeRadius(float radius) {
+    if (m_selected) {
+        ImplicitSphere *s = m_spheres[m_selectedIndex];
+        s->setRadius(radius);
+        m_polygonizer.invalidateCache();
+        repaint();
+    }
+}
+
+void DisplayWidget::changeWeight(float weight) {
+    if (m_selected) {
+        ImplicitSphere *s = m_spheres[m_selectedIndex];
+        s->setWeight(weight);
+        m_polygonizer.invalidateCache();
+        repaint();
+    }
+}
+
+void DisplayWidget::changeVelocity(Vector2f velocity) {
+    if (m_selected) {
+        ImplicitSphere *s = m_spheres[m_selectedIndex];
+        s->setVelocity(velocity);
+        m_polygonizer.invalidateCache();
+        repaint();
+    }
+}
+
+void DisplayWidget::changeColor(Vector3f color) {
+    if (m_selected) {
+        ImplicitSphere *s = m_spheres[m_selectedIndex];
+        s->setColor(color);
+        m_polygonizer.invalidateCache();
+        repaint();
+    }
 }

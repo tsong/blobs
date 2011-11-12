@@ -4,6 +4,7 @@
 #include <QWidget>
 #include "utils/vector.h"
 #include "displaywidget.h"
+#include "implicitsphere.h"
 
 namespace Ui {
     class ControlWidget;
@@ -29,12 +30,15 @@ signals:
     void randomizeColor(bool);
 
 public slots:
+    void changeSphere(const ImplicitSphere *sphere);
     void changeRadius(float radius);
     void changeWeight(float weight);
     void changeVelocity(Vector2f velocity);
     void changeColor(Vector3f color);
 
 private:
+    void disconnectSignals();
+    void connectSignals();
     Ui::ControlWidget *ui;
     bool m_buttonDown;
 

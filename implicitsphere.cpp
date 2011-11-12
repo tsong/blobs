@@ -13,8 +13,10 @@ inline int clampUp(float v) {
 }
 
 
-ImplicitSphere::ImplicitSphere(Vector2f position, float radius, Vector3f color, Vector2f velocity)
-    : m_position(position), m_radius(2*radius), m_color(color), m_velocity(velocity)
+ImplicitSphere::ImplicitSphere(Vector2f position, float radius,
+                               Vector3f color, Vector2f velocity, float weight)
+    : m_position(position), m_radius(2*radius),
+      m_weight(weight), m_color(color), m_velocity(velocity)
 {
 }
 
@@ -36,16 +38,6 @@ float ImplicitSphere::fieldValue(float x, float y) {
 void ImplicitSphere::blendGrid(Vertex *grid, int rows, int columns,
                            Vector2f origin, Vector2f dimensions)
 {
-
-    //glBegin(GL_POLYGON);
-    //Vector3f c = randColor3f(m_position[0] * columns + m_position[1]);
-    //glColor3f(c[0],c[1],c[2]);
-
-    /*glVertex2f(m_position[0] - m_radius, m_position[1] - m_radius);
-    glVertex2f(m_position[0] + m_radius, m_position[1] - m_radius);
-    glVertex2f(m_position[0] + m_radius, m_position[1] + m_radius);
-    glVertex2f(m_position[0] - m_radius, m_position[1] + m_radius);*/
-
     //size of each cell in the grid
     float dx = dimensions[0] / (columns-1);
     float dy = dimensions[1] / (rows-1);
@@ -55,13 +47,6 @@ void ImplicitSphere::blendGrid(Vertex *grid, int rows, int columns,
     int boundRow = clampUp((m_position[1] - m_radius - origin[1])/dy);
     int boundWidth = (m_position[0] + m_radius - origin[0])/dx - boundCol;
     int boundHeight = (m_position[1] + m_radius - origin[1])/dy - boundRow;
-    //int boundWidth = m_radius*2 / dx;
-    //int boundHeight = m_radius*2 / dy;
-
-    /*glVertex2f(origin[0] + (boundCol)*dx, origin[1] + (boundRow)*dy);
-    glVertex2f(origin[0] + (boundCol+boundWidth)*dx, origin[1] + (boundRow)*dy);
-    glVertex2f(origin[0] + (boundCol+boundWidth)*dx, origin[1] + (boundRow+boundHeight)*dy);
-    glVertex2f(origin[0] + (boundCol)*dx, origin[1] + (boundRow+boundHeight)*dy);*/
 
     if (boundRow >= rows || boundCol >= columns) return;
 
@@ -79,7 +64,6 @@ void ImplicitSphere::blendGrid(Vertex *grid, int rows, int columns,
     glVertex2f(origin[0] + (boundCol+boundWidth)*dx, origin[1] + (boundRow+boundHeight)*dy);
     glVertex2f(origin[0] + (boundCol)*dx, origin[1] + (boundRow+boundHeight)*dy);*/
 
-
     //update the grid
     for (int i = boundRow; i < boundRow + boundHeight; i++) {
         for (int j = boundCol; j < boundCol + boundWidth; j++) {
@@ -92,35 +76,6 @@ void ImplicitSphere::blendGrid(Vertex *grid, int rows, int columns,
             v.isInterior = v.fieldValue >= ISOVALUE;
         }
     }
-
-    //glEnd();
-
-    //glColor3f(0,0,0);
-    //glDrawCircle(m_position[0], m_position[1], 5);
-}
-
-void ImplicitSphere::setColor(Vector3f &color) {
-    m_color = color;
-}
-
-const Vector3f &ImplicitSphere::getColor() {
-    return m_color;
-}
-
-void ImplicitSphere::setPosition(Vector2f &position) {
-    m_position = position;
-}
-
-const Vector2f &ImplicitSphere::getPosition() {
-    return m_position;
-}
-
-void ImplicitSphere::setRadius(float radius) {
-    m_radius = 2*radius;
-}
-
-float ImplicitSphere::getRadius() {
-    return m_radius/2;
 }
 
 void ImplicitSphere::update(Vector2f origin, Vector2f dimensions, float timestep) {

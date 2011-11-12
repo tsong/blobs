@@ -7,6 +7,19 @@ ControlWidget::ControlWidget(QWidget *parent) :
     QWidget(parent), ui(new Ui::ControlWidget), m_buttonDown(false)
 {
     ui->setupUi(this);
+    updateRadius();
+    updateWeight();
+    updateColor();
+    updateVelocity();
+
+    connectSignals();
+}
+
+ControlWidget::~ControlWidget() {
+    delete ui;
+}
+
+void ControlWidget::connectSignals() {
     connect(ui->animateButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
     connect(ui->radiusSlider, SIGNAL(valueChanged(int)), this, SLOT(updateRadius()));
     connect(ui->weightSlider, SIGNAL(valueChanged(int)), this, SLOT(updateWeight()));
@@ -20,15 +33,43 @@ ControlWidget::ControlWidget(QWidget *parent) :
     connect(ui->weightRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeWeight(bool)));
     connect(ui->velocityRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeVelocity(bool)));
     connect(ui->colorRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeColor(bool)));
-
-    updateRadius();
-    updateWeight();
-    updateColor();
-    updateVelocity();
 }
 
-ControlWidget::~ControlWidget() {
-    delete ui;
+void ControlWidget::disconnectSignals() {
+    disconnect(ui->animateButton, SIGNAL(clicked()), this, SLOT(buttonClicked()));
+    disconnect(ui->radiusSlider, SIGNAL(valueChanged(int)), this, SLOT(updateRadius()));
+    disconnect(ui->weightSlider, SIGNAL(valueChanged(int)), this, SLOT(updateWeight()));
+    disconnect(ui->dxSlider, SIGNAL(valueChanged(int)), this, SLOT(updateVelocity()));
+    disconnect(ui->dySlider, SIGNAL(valueChanged(int)), this, SLOT(updateVelocity()));
+    disconnect(ui->redSlider, SIGNAL(valueChanged(int)), this, SLOT(updateColor()));
+    disconnect(ui->greenSlider, SIGNAL(valueChanged(int)), this, SLOT(updateColor()));
+    disconnect(ui->blueSlider, SIGNAL(valueChanged(int)), this, SLOT(updateColor()));
+
+    disconnect(ui->radiusRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeRadius(bool)));
+    disconnect(ui->weightRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeWeight(bool)));
+    disconnect(ui->velocityRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeVelocity(bool)));
+    disconnect(ui->colorRandomize, SIGNAL(toggled(bool)), this, SIGNAL(randomizeColor(bool)));
+}
+
+void ControlWidget::changeSphere(const ImplicitSphere *sphere) {
+    float radius = sphere->getRadius();
+    float weight = sphere->getWeight();
+    const Vector2f &velocity = sphere->getVelocity();
+    const Vector3f &color = sphere->getColor();
+
+    disconnectSignals();
+    changeRadius(radius);
+    changeWeight(weight);
+    changeVelocity(velocity);
+    changeColor(color);
+    connectSignals();
+
+    blockSignals(true);
+    updateRadius();
+    updateWeight();
+    updateVelocity();
+    updateColor();
+    blockSignals(false);
 }
 
 void ControlWidget::changeRadius(float radius) {
@@ -37,7 +78,7 @@ void ControlWidget::changeRadius(float radius) {
 }
 
 void ControlWidget::changeWeight(float weight) {
-    int v = (weight - WEIGHT_MIN) / (WEIGHT_MAX - WEIGHT_MIN);
+    int v = (weight - WEIGHT_MIN) / (WEIGHT_MAX - WEIGHT_MIN) * 100;
     ui->weightSlider->setValue(v);
 }
 
@@ -101,5 +142,5 @@ void ControlWidget::buttonClicked()
 {
     m_buttonDown = !m_buttonDown;
     ui->animateButton->setDown(m_buttonDown);
-    emit animate(true);
+    emit animate(m_buttonDown);
 }
