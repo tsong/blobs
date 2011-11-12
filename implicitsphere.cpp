@@ -33,7 +33,7 @@ float ImplicitSphere::fieldValue(float x, float y) {
     return f > 0 ? f : 0;
 }
 
-void ImplicitSphere::blendGrid(float *grid, int rows, int columns,
+void ImplicitSphere::blendGrid(Vertex *grid, int rows, int columns,
                            Vector2f origin, Vector2f dimensions)
 {
 
@@ -83,7 +83,9 @@ void ImplicitSphere::blendGrid(float *grid, int rows, int columns,
     //update the grid
     for (int i = boundRow; i < boundRow + boundHeight; i++) {
         for (int j = boundCol; j < boundCol + boundWidth; j++) {
-            grid[i*columns + j] += fieldValue(origin[0] + dx*j, origin[1] + dy*i);
+            Vertex &v = grid[i*columns + j];
+            v.fieldValue += fieldValue(origin[0] + dx*j, origin[1] + dy*i);
+            v.isInterior = v.fieldValue >= ISOVALUE;
         }
     }
 

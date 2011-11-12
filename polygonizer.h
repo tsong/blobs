@@ -13,7 +13,6 @@
 #define DEFAULT_WIDTH 1
 #define DEFAULT_HEIGHT 1
 
-#define ISOVALUE 0.5
 
 using namespace std;
 
@@ -40,13 +39,13 @@ public:
     bool isPolygonized();
 
 protected:
-    void resetVertexGrid();
-    void addTriangle(Vector2f a, Vector2f b, Vector2f c);
+    void resetGrid();
+    void addTriangle(Vertex a, Vertex b, Vertex c);
     Vector2f toWorldCoord(float row, float col);
     Vector2f toWorldCoord(uint idx);
     float fieldValue(float i, float j);
     void polygonizeCell(uint row, uint col);
-    vector<Vector2f> interopolateEdges(uint row, uint col);
+    vector<Vertex> interopolateEdges(uint row, uint col);
 
 protected:
     uint m_rows, m_columns;
@@ -54,9 +53,7 @@ protected:
 
     vector<ImplicitSurface*> m_surfaces;
 
-    Vertex *m_vertexGrid;
-    float *m_grid;
-    bool *m_interiorPoints;
+    Vertex *m_grid;
     bool m_isPolygonized;
 
     float *m_vertexBuffer;

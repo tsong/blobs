@@ -7,11 +7,7 @@ Polygonizer::Polygonizer(uint rows, uint columns, float x, float y, float width,
     : m_rows(rows), m_columns(columns), m_origin(x,y), m_dimensions(width, height),
     m_isPolygonized(false), m_numVertices(0), m_maxVertices(0)
 {
-    m_vertexGrid = new Vertex[rows*columns];
-    resetVertexGrid();
-
-    m_grid = new float[rows*columns];
-    m_interiorPoints = new bool[rows*columns];
+    m_grid = new Vertex[rows*columns];
 
     //theoretically, there may be more than 2 times the number of cells in triangles,
     //but would be a very unlikely occurance
@@ -29,7 +25,6 @@ Polygonizer::Polygonizer(uint rows, uint columns, float x, float y, float width,
 
 Polygonizer::~Polygonizer() {
     delete[] m_grid;
-    delete[] m_interiorPoints;
 
     free(m_vertexBuffer);
     free(m_colorBuffer);
@@ -40,7 +35,6 @@ void Polygonizer::setBounds(float x, float y, float width, float height) {
     m_origin = Vector2f(x,y);
     m_dimensions = Vector2f(width, height);
     m_isPolygonized = false;
-    resetVertexGrid();
 }
 
 
@@ -80,20 +74,11 @@ void Polygonizer::polygonize() {
     if (m_isPolygonized) return;
     m_numVertices = 0;
 
-    //zero the grid and interior points matrix
-    memset(m_grid, 0, m_rows*m_columns*sizeof(float));
-    memset(m_interiorPoints, 0, m_rows*m_columns*sizeof(bool));
+    resetGrid();
 
     //blend the grid using all the implicit surfaces
     for (uint i = 0; i < m_surfaces.size(); i++) {
         m_surfaces[i]->blendGrid(m_grid, m_rows, m_columns, m_origin, m_dimensions);
-    }
-
-    //calculate interior points matrix
-    for (uint i = 0; i < m_rows; i++) {
-        for (uint j = 0; j < m_columns; j++) {
-            m_interiorPoints[i*m_columns+j] = m_grid[i*m_columns+j] >= ISOVALUE;
-        }
     }
 
     //convert each rectangular cell to triangles
@@ -140,12 +125,14 @@ const float *Polygonizer::getColors(uint &numVertices) {
 
 
 
-void Polygonizer::resetVertexGrid() {
+void Polygonizer::resetGrid() {
     float dx = m_dimensions[0] / (m_columns-1);
     float dy = m_dimensions[1] / (m_rows-1);
     for (uint i = 0; i < m_rows; i++) {
         for (uint j = 0; j < m_columns; j++) {
-            Vertex &v = m_vertexGrid[i*m_columns + j];
+            Vertex &v = m_grid[i*m_columns + j];
+            v.fieldValue = 0;
+            v.isInterior = false;
             v.pos = Vector2f(m_origin[0] + j*dx, m_origin[1] + i*dy);
             v.color = Vector3f(0,0,0);
             v.normal = Vector3f(0,0,0);
@@ -176,7 +163,7 @@ float Polygonizer::fieldValue(float i, float j) {
     return f;
 }
 
-vector<Vector2f> Polygonizer::interopolateEdges(uint row, uint col) {
+vector<Vertex> Polygonizer::interopolateEdges(uint row, uint col) {
     //indices of top-left, top-right, bottom-left, and bottom-right points respectively
     uint topLeft = (row+0)*m_columns + col+0;
     uint topRight = (row+0)*m_columns + col+1;
@@ -206,18 +193,25 @@ vector<Vector2f> Polygonizer::interopolateEdges(uint row, uint col) {
                                Vector2f(0,dy)
                               };
 
-    vector<Vector2f> points;
+    vector<Vertex> vertices;
     for (uint i = 0; i < 4; i++) {
        //check if the edge has one point inside surface and one outside surface
-       if (m_interiorPoints[edges[i][0]] ^ m_interiorPoints[edges[i][1]]) {
+       if (m_grid[edges[i][0]].isInterior ^ m_grid[edges[i][1]].isInterior) {
             //linear interpolation ratio
-            float a = m_grid[edges[i][0]];
-            float b = m_grid[edges[i][1]];
+            float a = m_grid[edges[i][0]].fieldValue;
+            float b = m_grid[edges[i][1]].fieldValue;
             float m = ISOVALUE;
             float r = abs(m-a)/abs(b-a);
 
-            //calculate and add the interpolated point (in world coordinates)
-            points.push_back(startingPositions[i] + (directions[i]*r));
+            //calculate and add the interpolated vertex (in world coordinates)
+            Vertex interp;
+            interp.fieldValue = ISOVALUE;
+            interp.isInterior = true;
+            interp.pos = startingPositions[i] + (directions[i]*r);
+            interp.color = m_grid[edges[i][0]].color*r + m_grid[edges[i][1]].color*(1-r);
+            interp.normal = m_grid[edges[i][0]].normal*r + m_grid[edges[i][1]].normal*(1-r);
+
+            vertices.push_back(interp);
        }
     }
 
@@ -236,11 +230,11 @@ vector<Vector2f> Polygonizer::interopolateEdges(uint row, uint col) {
     glEnd();*/
 
 
-    return points;
+    return vertices;
 }
 
 void Polygonizer::polygonizeCell(uint row, uint col) {
-    vector<Vector2f> interp = interopolateEdges(row, col);
+    vector<Vertex> interp = interopolateEdges(row, col);
 
     //flat indices of each corner point of the cell
     uint cornerIndices[4] = {
@@ -257,10 +251,10 @@ void Polygonizer::polygonizeCell(uint row, uint col) {
     //calculate binary representation of the current cell
     uint combination = 0;
     for (uint i = 0; i < 4; i++) {
-            float v = m_grid[cornerIndices[i]];
-            combination = (combination << 1) | (v >= ISOVALUE ? 1 : 0);
+            Vertex &v = m_grid[cornerIndices[i]];
+            combination = (combination << 1) | (v.isInterior ? 1 : 0);
 
-            if (v >= ISOVALUE)
+            if (v.isInterior)
                 interiorCorners[numInterior++] = i;
     }
 
@@ -278,13 +272,14 @@ void Polygonizer::polygonizeCell(uint row, uint col) {
     }*/
 
 
-    Vector2f corner[4] = {toWorldCoord(cornerIndices[0]),
-                          toWorldCoord(cornerIndices[1]),
-                          toWorldCoord(cornerIndices[2]),
-                          toWorldCoord(cornerIndices[3])};
-
     //glColor3f(0,1,0);
     //glBegin(GL_TRIANGLES);
+
+    Vertex corner[4] = {m_grid[cornerIndices[0]],
+                        m_grid[cornerIndices[1]],
+                        m_grid[cornerIndices[2]],
+                        m_grid[cornerIndices[3]]};
+
     switch(combination) {
     case 1:  //0001
     case 2:  //0010
@@ -351,7 +346,7 @@ void Polygonizer::polygonizeCell(uint row, uint col) {
     //glEnd();
 }
 
-void Polygonizer::addTriangle(Vector2f a, Vector2f b, Vector2f c) {
+void Polygonizer::addTriangle(Vertex a, Vertex b, Vertex c) {
     //glVertex2f(a[0],a[1]);
     //glVertex2f(b[0],b[1]);
     //glVertex2f(c[0],c[1]);
@@ -368,10 +363,16 @@ void Polygonizer::addTriangle(Vector2f a, Vector2f b, Vector2f c) {
     }
 
     //add the triangle to the buffers
-    Vector2f *V[] = {&a, &b, &c};
+    Vertex *V[] = {&a, &b, &c};
     for (uint i = 0; i < 3; i++) {
         for (uint j = 0; j < 2; j++) {
-            m_vertexBuffer[m_numVertices*2 + 2*i+j] = V[i]->get(j);
+            m_vertexBuffer[m_numVertices*2 + 2*i+j] = V[i]->pos.get(j);
+        }
+
+        for (uint j = 0; j < 3; j++) {
+            uint idx = m_numVertices*3 + 3*i+j;
+            m_colorBuffer[idx] = V[i]->color.get(j);
+            m_normalBuffer[idx] = V[i]->normal.get(j);
         }
     }
 

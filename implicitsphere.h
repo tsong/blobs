@@ -9,7 +9,7 @@ public:
     ImplicitSphere(Vector2f position, float radius);
     ~ImplicitSphere();
     float fieldValue(float x, float y);
-    void blendGrid(float *grid, int rows, int columns, Vector2f origin, Vector2f dimensions);
+    void blendGrid(Vertex *grid, int rows, int columns, Vector2f origin, Vector2f dimensions);
 
 protected:
     Vector2f m_position;
