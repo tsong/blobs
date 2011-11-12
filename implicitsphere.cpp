@@ -37,9 +37,9 @@ void ImplicitSphere::blendGrid(float *grid, int rows, int columns,
                            Vector2f origin, Vector2f dimensions)
 {
 
-    glBegin(GL_POLYGON);
-    Vector3f c = randColor3f(m_position[0] * columns + m_position[1]);
-    glColor3f(c[0],c[1],c[2]);
+    //glBegin(GL_POLYGON);
+    //Vector3f c = randColor3f(m_position[0] * columns + m_position[1]);
+    //glColor3f(c[0],c[1],c[2]);
 
     /*glVertex2f(m_position[0] - m_radius, m_position[1] - m_radius);
     glVertex2f(m_position[0] + m_radius, m_position[1] - m_radius);
@@ -87,7 +87,7 @@ void ImplicitSphere::blendGrid(float *grid, int rows, int columns,
         }
     }
 
-    glEnd();
+    //glEnd();
 
     //glColor3f(0,0,0);
     //glDrawCircle(m_position[0], m_position[1], 5);

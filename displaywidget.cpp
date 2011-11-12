@@ -54,22 +54,22 @@ void DisplayWidget::paintGL() {
     glLoadIdentity();
 
     m_polygonizer.polygonize();
-    /*float data[vertices.size()*2];
-    for (uint i = 0; i < vertices.size(); i++) {
-        Vector2f v = vertices[i];
-        data[2*i] = v[0];
-        data[2*i+1] = v[1];
-    }
+
+    uint numVertices;
+    const float *data = m_polygonizer.getVertices(numVertices);
+    if (data == 0) return;
 
     glColor3f(0,0,0);
     glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(2, GL_FLOAT, 0, data);
+        glVertexPointer(2, GL_FLOAT, 0, data);
+        glDrawArrays(GL_TRIANGLES, 0, numVertices);
+    glDisableClientState(GL_VERTEX_ARRAY);
 
-    // draw a cube
-    glDrawArrays(GL_QUADS, 0, 24);
-    glDrawArrays(GL_POINTS, 0, vertices.size());
-
-    // deactivate vertex arrays after drawing
+    /*glColor3f(0,0,0);
+    float D[] = {0,0, 0,200, 300,200};
+    glEnableClientState(GL_VERTEX_ARRAY);
+            glVertexPointer(2, GL_FLOAT, 0, D);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
     glDisableClientState(GL_VERTEX_ARRAY);*/
 }
 

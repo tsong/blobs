@@ -17,6 +17,13 @@
 
 using namespace std;
 
+typedef struct Vertex {
+    Vector2f pos;
+    Vector3f color;
+    Vector3f normal;
+} Vertex;
+
+
 class Polygonizer {
 
 public:
@@ -33,9 +40,9 @@ public:
     const ImplicitSurface *readSurface(uint position) const;
 
     void polygonize();
-    const float *getVertices(uint &size);
-    const float *getNormals(uint &size);
-    const float *getColors(uint &size);
+    const float *getVertices(uint &numVertices);
+    const float *getNormals(uint &numVertices);
+    const float *getColors(uint &numVertices);
 
 protected:
     void addTriangle(Vector2f a, Vector2f b, Vector2f c);
@@ -55,7 +62,11 @@ protected:
     bool *m_interiorPoints;
     bool m_isPolygonized;
 
+    float *m_vertexBuffer;
+    float *m_colorBuffer;
+    float *m_normalBuffer;
     uint m_numVertices;
+    uint m_maxVertices;
 public:
     QGLWidget *widget;
 };
