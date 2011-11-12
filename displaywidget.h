@@ -11,6 +11,15 @@
 
 #define FPS 60
 
+#define RADIUS_MIN 20
+#define RADIUS_MAX 100
+
+#define WEIGHT_MIN 0
+#define WEIGHT_MAX 10
+
+#define VELOCITY_MIN 5
+#define VELOCITY_MAX 60
+
 using namespace std;
 
 class DisplayWidget : public QGLWidget {
